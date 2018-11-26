@@ -74,10 +74,10 @@ class ProcessDesc(object):
         self.ffi = lib._ffi
         self._desc = self.ffi.new("struct NVVL_LayerDesc*")
 
-        self.width = width
-        self.height = height
-        self.scale_width = scale_width
-        self.scale_height = scale_height
+        self.width = self._cast_to_int(width, 'width')
+        self.height = self._cast_to_int(height, 'height')
+        self.scale_width = self._cast_to_int(scale_width, 'scale_width')
+        self.scale_height = self._cast_to_int(scale_height, 'scale_height')
         self.normalized = normalized
         self.random_crop = random_crop
         self.random_flip = random_flip
@@ -110,6 +110,12 @@ class ProcessDesc(object):
             raise ValueError("Unknown type")
 
         self.dimension_order = dimension_order
+
+    def _cast_to_int(self, var, var_name=None):
+        if not isinstance(var, int):
+            print('WARNING: {} is not an int. '
+                  'Forcing the casting.'.format(var_name))
+        return int(var)
 
     def _get_dim(self, dim):
         if dim == 'c':
@@ -285,14 +291,14 @@ class VideoDataset(torch.utils.data.Dataset):
         d = desc.desc()
         changes = {}
 
-        if (desc.random_crop and (self.width > desc.width)):
-            d.crop_x = random.randint(0, self.width - desc.width)
+        if (desc.random_crop and (desc.scale_width > desc.width)):
+            d.crop_x = random.randint(0, desc.scale_width - desc.width)
         else:
             d.crop_x = 0
         changes['crop_x'] = d.crop_x
 
-        if (desc.random_crop and (self.height > desc.height)):
-            d.crop_y = random.randint(0, self.height - desc.height)
+        if (desc.random_crop and (desc.scale_height > desc.height)):
+            d.crop_y = random.randint(0, desc.scale_height - desc.height)
         else:
             d.crop_y = 0
         changes['crop_y'] = d.crop_y
