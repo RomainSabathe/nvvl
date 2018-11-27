@@ -111,7 +111,17 @@ class VideoLoader(object):
             self.dataset._finish_receive()
 
         if any(label is not None for label in labels):
-            t["labels"] = labels
+            t['labels'] = labels
+
+            # Going further: we can try to batch the labels.
+            are_tensors = all(isinstance(label, torch.Tensor)
+                              for label in labels)
+            if are_tensors:
+                # We're assured that labels[0] is a tensor.
+                have_same_shape = all(labels[0].shape == label.shape
+                                      for label in labels)
+                if have_same_shape:
+                    t['labels'] = torch.stack(labels, 0)
 
         return t
 
